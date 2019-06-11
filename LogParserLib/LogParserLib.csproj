@@ -4,7 +4,7 @@
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <RootNamespace>com.tiberiumfusion.minecraft.logparserlib</RootNamespace>
     <Copyright>2019</Copyright>
-    <Description>Provides detailed, useful data analysis from your just your Minecraft server's standard logs.</Description>
+    <Description>Provides parsed &amp; analyzed data from Minecraft's standard logs in the JSON format.</Description>
     <Company />
     <Authors>TiberiumFusion</Authors>
     <Version>0.0.0.0</Version>
