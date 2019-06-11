@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <RootNamespace>com.tiberiumfusion.minecraft.logparserlib</RootNamespace>
+    <Copyright>2019</Copyright>
+    <Description>Provides detailed, useful data analysis from your just your Minecraft server's standard logs.</Description>
+    <Company />
+    <Authors>TiberiumFusion</Authors>
+    <Version>0.0.0.0</Version>
+    <NeutralLanguage>en-US</NeutralLanguage>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Formats\ExportStructure\" />
+  </ItemGroup>
+
+</Project>

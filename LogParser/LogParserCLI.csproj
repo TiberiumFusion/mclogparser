@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <RootNamespace>com.tiberiumfusion.minecraft.logparser</RootNamespace>
+    <StartupObject>com.tiberiumfusion.minecraft.logparser.Program</StartupObject>
+    <Version>0.0.0.0</Version>
+    <Authors>TiberiumFusion</Authors>
+    <Description>CLI layer for LogParserLib.</Description>
+    <Copyright>2019</Copyright>
+    <Company />
+    <NeutralLanguage>en-US</NeutralLanguage>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\LogParserLib\LogParserLib.csproj" />
+  </ItemGroup>
+
+</Project>
