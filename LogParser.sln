@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28307.539
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LogParserCLI", "LogParser\LogParserCLI.csproj", "{732A548E-E6AC-49EC-8A8D-9513EB7381F1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LogParserCLI", "LogParserCLI\LogParserCLI.csproj", "{732A548E-E6AC-49EC-8A8D-9513EB7381F1}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LogParserLib", "LogParserLib\LogParserLib.csproj", "{D89C81A7-F7B2-4687-B76B-A89E3CBE7D5B}"
 EndProject
