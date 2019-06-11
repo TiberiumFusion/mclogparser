@@ -18,6 +18,7 @@ namespace com.tiberiumfusion.minecraft.logparserlib
         [JsonProperty(Order = 105)] public TimeRange PlayerStatsSecondPassTime = new TimeRange();
         [JsonProperty(Order = 106)] public TimeRange ServerSessionsPassTime = new TimeRange();
         [JsonProperty(Order = 107)] public TimeRange SessionLinkingPassTime = new TimeRange();
+        [JsonProperty(Order = 108)] public TimeRange GameEventTotalsPassTime = new TimeRange();
 
         public AnalysisStats()
         {

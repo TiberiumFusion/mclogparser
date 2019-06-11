@@ -14,21 +14,28 @@ namespace com.tiberiumfusion.minecraft.logparserlib.Formats
 
         //================| Serializable fields |================//
 
-        [JsonProperty(Order = 10001)] public LogLine Source;
+        [JsonProperty(Order = 10001)] public DateTime Time; // Directly from LogLine Source
+            public bool ShouldSerializeTime() { return E_Options.GameEvent_IncludeTime; }
+
+        [JsonProperty(Order = 10101)] public LogLine Source;
             public bool ShouldSerializeSource() { return E_Options.GameEvent_IncludeSourceLogLine && !E_Options.GameEvent_UseCatalogIDsForSourceLogLine; }
-        [JsonProperty(Order = 10002)] public long SourceID;
+        [JsonProperty(Order = 10102)] public long SourceID;
             public bool ShouldSerializeSourceID() { return E_Options.GameEvent_IncludeSourceLogLine && E_Options.GameEvent_UseCatalogIDsForSourceLogLine; }
 
-        [JsonProperty(Order = -980)] public string EventClassName;
+        [JsonProperty(Order = -980)] public string EventTypeName;
 
 
         //////////////////////////////////////////// CTOR ////////////////////////////////////////////
         public GameEvent(LogLine source)
         {
             Source = source;
+            Time = source.Time;
             parse();
 
-            EventClassName = this.GetType().Name;
+            if (this.GetType().Namespace == "com.tiberiumfusion.minecraft.logparserlib.Formats.GameEvents")
+                EventTypeName = this.GetType().Name;
+            else
+                EventTypeName = this.GetType().FullName;
         }
         protected virtual void parse()
         {

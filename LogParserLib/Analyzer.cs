@@ -40,15 +40,15 @@ namespace com.tiberiumfusion.minecraft.logparserlib
             bool doLogging = (executor != null);
 
             // Take note of what options were used
-            analyzedData.Stats.AnalyzerOptionsUsed = analyzerOptions;
+            analyzedData.AnalysisProcessStats.AnalyzerOptionsUsed = analyzerOptions;
 
             // Mark time start
-            analyzedData.Stats.AnalysisTime.Start = DateTime.Now;
+            analyzedData.AnalysisProcessStats.AnalysisTime.Start = DateTime.Now;
             if (doLogging)
-                reportProgress(executor, new WorkerReport("Analysis began at: " + analyzedData.Stats.AnalysisTime.Start.ToString()));
+                reportProgress(executor, new WorkerReport("Analysis began at: " + analyzedData.AnalysisProcessStats.AnalysisTime.Start.ToString()));
 
             //////////////////////////////////////////// PRELIMINARY PASS ////////////////////////////////////////////
-            analyzedData.Stats.FirstPassTime.Start = DateTime.Now;
+            analyzedData.AnalysisProcessStats.FirstPassTime.Start = DateTime.Now;
             ///// #1
             if (doLogging)
                 reportProgress(executor, new WorkerReport("Calculating log time ranges"));
@@ -94,11 +94,13 @@ namespace com.tiberiumfusion.minecraft.logparserlib
                 }
                 lastReport = DateTime.Now;
 
+                dlog.GameEvents.Clear();
+
                 //////////////////////////////////////////// SERIAL vs PARALLEL SWITCH ////////////////////////////////////////////
-                
+
                 ///// Parallel processing is typically slower than serial proessing if your log files are small
-                // You may only get worthwhile performance from parallel mode if the majority of your log files are very long (i.e. over 1MB uncompressed)
-                // This mode will probably perform better for large batches of massive server logs
+                // You may only get worthwhile performance from parallel mode if your log files are very long (i.e. over 1MB uncompressed) and have long lines
+                // This mode might perform better for large batches of massive server logs
                 if (analyzerOptions.ProcessLogLinesInParallel)
                 {
                     ///// First parallel pass (assume workingPlayerNames record is incomplete the entire time)
@@ -108,9 +110,11 @@ namespace com.tiberiumfusion.minecraft.logparserlib
                     reportFrontP = reportFront + " Pass 1/2: ";
                     Parallel.For(0, dlog.LogLines.DissectedLines.Count, k =>
                     {
-                        analyzeLogLine(dlog.LogLines.DissectedLines, k, ref currentLine, ref totalLines,
-                                       workingPlayerNames, unmatchedLines, ref lastReport, ref reportFrontP, ref clearance, ref doLogging,
-                                       analyzedData, analyzerOptions, executor);
+                        GameEvent GE = analyzeLogLine(dlog.LogLines.DissectedLines, k, ref currentLine, ref totalLines,
+                                                      workingPlayerNames, unmatchedLines, ref lastReport, ref reportFrontP, ref clearance, ref doLogging,
+                                                      analyzedData, analyzerOptions, executor);
+                        if (GE != null)
+                            dlog.GameEvents.Add(GE);
                     });
 
                     ///// Second parallel pass (workingPlayerNames record is now complete)
@@ -120,13 +124,16 @@ namespace com.tiberiumfusion.minecraft.logparserlib
                     totalLines = (float)unmatchedLines.Count;
                     Parallel.For(0, unmatchedLines.Count, k =>
                     {
-                        analyzeLogLine(unmatchedLines, k, ref currentLine, ref totalLines,
-                                       workingPlayerNames, null, ref lastReport, ref reportFrontP, ref clearance, ref doLogging,
-                                       analyzedData, analyzerOptions, executor);
+                        GameEvent GE = analyzeLogLine(unmatchedLines, k, ref currentLine, ref totalLines,
+                                                      workingPlayerNames, null, ref lastReport, ref reportFrontP, ref clearance, ref doLogging,
+                                                      analyzedData, analyzerOptions, executor);
+                        if (GE != null)
+                            dlog.GameEvents.Add(GE);
                     });
 
                     // Fix the sorting of the GameEvents b/c of parallel processing
                     analyzedData.GameEvents = analyzedData.GameEvents.OrderBy(x => x.Source.Time).ToList();
+                    dlog.GameEvents = dlog.GameEvents.OrderBy(x => x.Source.Time).ToList();
                 }
 
                 ///// Serial processing is generally a good bit faster than parallel processing if your log files are small
@@ -136,13 +143,11 @@ namespace com.tiberiumfusion.minecraft.logparserlib
                 {
                     for (int k = 0; k < dlog.LogLines.DissectedLines.Count; k++)
                     {
-                        //try
-                        //{
-                        analyzeLogLine(dlog.LogLines.DissectedLines, k, ref currentLine, ref totalLines,
-                                       workingPlayerNames, null, ref lastReport, ref reportFront, ref clearance, ref doLogging,
-                                       analyzedData, analyzerOptions, executor);
-                        //}
-                        //catch (Exception e) { }
+                        GameEvent GE = analyzeLogLine(dlog.LogLines.DissectedLines, k, ref currentLine, ref totalLines,
+                                                      workingPlayerNames, null, ref lastReport, ref reportFront, ref clearance, ref doLogging,
+                                                      analyzedData, analyzerOptions, executor);
+                        if (GE != null)
+                            dlog.GameEvents.Add(GE);
                     }
                 }
 
@@ -150,11 +155,11 @@ namespace com.tiberiumfusion.minecraft.logparserlib
                 if (doLogging)
                     reportProgress(executor, new WorkerReport(reportFront + "done" + clearance, true, false, 0));
             }
-            analyzedData.Stats.FirstPassTime.End = DateTime.Now;
+            analyzedData.AnalysisProcessStats.FirstPassTime.End = DateTime.Now;
 
             //////////////////////////////////////////// PlayerStats "FIRST PASS" ////////////////////////////////////////////
             ///// Player sessions first pass
-            analyzedData.Stats.PlayerStatsFirstPassTime.Start = DateTime.Now;
+            analyzedData.AnalysisProcessStats.PlayerStatsFirstPassTime.Start = DateTime.Now;
             // Gather up all players' UUIDs before anything else
             if (doLogging)
                 reportProgress(executor, new WorkerReport("Assembling player session data, first pass"));
@@ -184,11 +189,11 @@ namespace com.tiberiumfusion.minecraft.logparserlib
                 }
                 analyzedData.AllPlayerStats[playerUUID].ConsolidatePlayerContemporaryNames();
             }
-            analyzedData.Stats.PlayerStatsFirstPassTime.End = DateTime.Now;
+            analyzedData.AnalysisProcessStats.PlayerStatsFirstPassTime.End = DateTime.Now;
 
             //////////////////////////////////////////// PlayerStats "UUID PASS" ////////////////////////////////////////////
             // Using the basic PlayerSession data just created, determine player UUIDs and add them to all relevant GameEvents
-            analyzedData.Stats.PlayerStatsUUIDPassTime.Start = DateTime.Now;
+            analyzedData.AnalysisProcessStats.PlayerStatsUUIDPassTime.Start = DateTime.Now;
             if (doLogging)
                 reportProgress(executor, new WorkerReport("Determining player UUIDs ... ", false, true, 0));
             float totalGECount = (float)analyzedData.GameEvents.Count;
@@ -207,13 +212,13 @@ namespace com.tiberiumfusion.minecraft.logparserlib
                 GameEvent ge = analyzedData.GameEvents[i];
                 ge.UUIDPass(analyzedData);
             }
-            analyzedData.Stats.PlayerStatsUUIDPassTime.End = DateTime.Now;
+            analyzedData.AnalysisProcessStats.PlayerStatsUUIDPassTime.End = DateTime.Now;
             if (doLogging)
                 reportProgress(executor, new WorkerReport("Determining player UUIDs ... done      ", true, true, 0));
 
             //////////////////////////////////////////// PlayerStats "SECOND PASS" ////////////////////////////////////////////
             // With the player UUIDs to all GameEvents (hopefully) filled in, we can perform the second pass over session data
-            analyzedData.Stats.PlayerStatsSecondPassTime.Start = DateTime.Now;
+            analyzedData.AnalysisProcessStats.PlayerStatsSecondPassTime.Start = DateTime.Now;
             if (doLogging)
                 reportProgress(executor, new WorkerReport("Assembling player session data, second pass"));
             foreach (string playerUUID in analyzedData.AllPlayerStats.Keys)
@@ -222,11 +227,11 @@ namespace com.tiberiumfusion.minecraft.logparserlib
                 foreach (PlayerSession session in stats.Sessions)
                     session.PopulateSecondPass();
             }
-            analyzedData.Stats.PlayerStatsSecondPassTime.End = DateTime.Now;
+            analyzedData.AnalysisProcessStats.PlayerStatsSecondPassTime.End = DateTime.Now;
 
             //////////////////////////////////////////// ServerSession PASS ////////////////////////////////////////////
             // With the PlayerSessions constructed, we can now create the ServerSession records
-            analyzedData.Stats.ServerSessionsPassTime.Start = DateTime.Now;
+            analyzedData.AnalysisProcessStats.ServerSessionsPassTime.Start = DateTime.Now;
             if (doLogging)
                 reportProgress(executor, new WorkerReport("Assembling server session data"));
             for (int i = 0; i < analyzedData.GameEvents.Count; i++)
@@ -241,11 +246,11 @@ namespace com.tiberiumfusion.minecraft.logparserlib
                     analyzedData.ServerSessions.Add(session);
                 }
             }
-            analyzedData.Stats.ServerSessionsPassTime.End = DateTime.Now;
+            analyzedData.AnalysisProcessStats.ServerSessionsPassTime.End = DateTime.Now;
 
             //////////////////////////////////////////// PlayerSession up-link to concurrent ServerSession PASS ////////////////////////////////////////////
             // With the ServerSessions constructed, we can go back through the PlayerSessions and link them to their concurrent ServerSession
-            analyzedData.Stats.SessionLinkingPassTime.Start = DateTime.Now;
+            analyzedData.AnalysisProcessStats.SessionLinkingPassTime.Start = DateTime.Now;
             if (doLogging)
                 reportProgress(executor, new WorkerReport("Linking player/server session data"));
             foreach (string playerUUID in analyzedData.AllPlayerStats.Keys)
@@ -261,66 +266,122 @@ namespace com.tiberiumfusion.minecraft.logparserlib
                     }
                 }
             }
-            analyzedData.Stats.SessionLinkingPassTime.End = DateTime.Now;
+            analyzedData.AnalysisProcessStats.SessionLinkingPassTime.End = DateTime.Now;
+            
+            //////////////////////////////////////////// GamEvent totals pass ////////////////////////////////////////////
+            if (analyzerOptions.CountGameEventTotals)
+            {
+                analyzedData.AnalysisProcessStats.GameEventTotalsPassTime.Start = DateTime.Now;
+                if (doLogging)
+                    reportProgress(executor, new WorkerReport("Calculating GameEvent totals"));
+
+                foreach (DecoratedLog dlog in analyzedData.DecoratedLogs)
+                {
+                    dlog.GameEventTotals.Clear();
+                    foreach (GameEvent ge in dlog.GameEvents)
+                    {
+                        if (dlog.GameEventTotals.ContainsKey(ge.EventTypeName))
+                            dlog.GameEventTotals[ge.EventTypeName]++;
+                        else
+                            dlog.GameEventTotals[ge.EventTypeName] = 1;
+                    }
+                }
+
+                analyzedData.CompleteGameEventTotals.Clear();
+                foreach (GameEvent ge in analyzedData.GameEvents)
+                {
+                    if (analyzedData.CompleteGameEventTotals.ContainsKey(ge.EventTypeName))
+                        analyzedData.CompleteGameEventTotals[ge.EventTypeName]++;
+                    else
+                        analyzedData.CompleteGameEventTotals[ge.EventTypeName] = 1;
+                }
+
+                foreach (PlayerStats stats in analyzedData.AllPlayerStats.Values)
+                {
+                    foreach (PlayerSession ps in stats.Sessions)
+                    {
+                        ps.AllConcurrentGameEventsTotals.Clear();
+                        foreach (GameEvent ge in ps.AllConcurrentGameEvents)
+                        {
+                            if (ps.AllConcurrentGameEventsTotals.ContainsKey(ge.EventTypeName))
+                                ps.AllConcurrentGameEventsTotals[ge.EventTypeName]++;
+                            else
+                                ps.AllConcurrentGameEventsTotals[ge.EventTypeName] = 1;
+                        }
+                    }
+                }
+
+                foreach (ServerSession ss in analyzedData.ServerSessions)
+                {
+                    ss.AllGameEventsTotals.Clear();
+                    foreach (GameEvent ge in ss.AllGameEvents)
+                    {
+                        if (ss.AllGameEventsTotals.ContainsKey(ge.EventTypeName))
+                            ss.AllGameEventsTotals[ge.EventTypeName]++;
+                        else
+                            ss.AllGameEventsTotals[ge.EventTypeName] = 1;
+                    }
+                }
+
+                analyzedData.AnalysisProcessStats.GameEventTotalsPassTime.End = DateTime.Now;
+            }
 
             // Mark time end
-            analyzedData.Stats.AnalysisTime.End = DateTime.Now;
+            analyzedData.AnalysisProcessStats.AnalysisTime.End = DateTime.Now;
             if (doLogging)
-                reportProgress(executor, new WorkerReport("Analysis finished at: " + analyzedData.Stats.AnalysisTime.End.ToString() + ", total time: " + analyzedData.Stats.AnalysisTime.Duration.ToString()));
+                reportProgress(executor, new WorkerReport("Analysis finished at: " + analyzedData.AnalysisProcessStats.AnalysisTime.End.ToString() + ", total time: " + analyzedData.AnalysisProcessStats.AnalysisTime.Duration.ToString()));
         }
 
         //////////////////////////////////////////// EVENT ANALYSIS PROCEDURES ////////////////////////////////////////////
         ///// The per-log analyzer
-        private static void analyzeLogLine(List<LogLine> lines, int lineIndex, ref float currentLine, ref float totalLines,
+        private static GameEvent analyzeLogLine(List<LogLine> lines, int lineIndex, ref float currentLine, ref float totalLines,
                                              ConcurrentDictionary<string, byte> workingPlayerNames, List<LogLine> unmatchedLines,
                                              ref DateTime lastReport, ref string reportFront, ref string clearance, ref bool doLogging,
                                              AnalyzedData analyzedData, AnalyzerOptions analyzerOptions, BackgroundWorker executor = null)
         {
-            //try
-            //{
             LogLine line = lines[lineIndex];
-            GameEvent ge = analyzeForEvent(line, workingPlayerNames, unmatchedLines, analyzerOptions);
-            if (ge != null)
+            GameEvent newGE = analyzeForEvent(line, workingPlayerNames, unmatchedLines, analyzerOptions);
+            if (newGE != null && !analyzerOptions.ExcludedGameEvents.Contains(newGE.GetType()))
             {
                 lock (analyzedData.GameEvents)
                 {
-                    analyzedData.GameEvents.Add(ge);
+                    analyzedData.GameEvents.Add(newGE);
                 }
 
-                
-                ///// Gather as seen player contemporary names
-                // For more advanced analysis procedures
 
-                PlayerJoinEvent joinGE = ge as PlayerJoinEvent;
+                // Gather as seen player contemporary names (for more advanced analysis procedures)
+
+                PlayerJoinEvent joinGE = newGE as PlayerJoinEvent;
                 if (joinGE != null)
                     workingPlayerNames[joinGE.Player.Name] = 1;
 
-                PlayerNicknameEvent nicknameGE = ge as PlayerNicknameEvent;
+                PlayerNicknameEvent nicknameGE = newGE as PlayerNicknameEvent;
                 if (nicknameGE != null)
                     workingPlayerNames[nicknameGE.AssignedPlayerNickname] = 1;
+            }
+            else
+            {
+                newGE = null;
             }
 
             currentLine += 1.0f;
             if (doLogging)
             {
-                if ((DateTime.Now - lastReport).TotalMilliseconds > 100) // Push requests to the main thread no faster than every 100ms to prevent mass slowdown
+                if ((DateTime.Now - lastReport).TotalMilliseconds > 100) // Push reports to the main thread no faster than every 100ms to prevent mass slowdown
                 {
                     string logProgress = ((currentLine / totalLines) * 100.0f).ToString("N2") + "%";
                     reportProgress(executor, new WorkerReport(reportFront + logProgress + clearance, false, false, 0));
                     lastReport = DateTime.Now;
                 }
             }
-            //}
-            //catch (Exception e) { }
+
+            return newGE;
         }
         ///// The per-line analyzer
         private static GameEvent analyzeForEvent(LogLine line, ConcurrentDictionary<string, byte> workingPlayerNames, List<LogLine> unmatchedLines, AnalyzerOptions analyzerOptions)
         {
             bool ignoreCommonTags = analyzerOptions.IgnoreCommonTags;
 
-            if (line.IsLikelyException) // The Parser assigned this field
-                return new JavaExceptionEvent(line);
-            
             if (line.Body.Length >= 33 && line.Body.Substring(0, 33) == "Starting minecraft server version" && (ignoreCommonTags || line.Tag.Contains("Server thread")))
                 return new ServerStartEvent(line);
 
@@ -341,6 +402,9 @@ namespace com.tiberiumfusion.minecraft.logparserlib
 
             else if (line.Body.Length >= 23 && line.Body.Substring(0, 23) == "Saving chunks for level" && (ignoreCommonTags || line.Tag.Contains("Server thread")))
                 return new SavingChunksEvent(line);
+
+            else if (line.Body.Length >= 21 && line.Body.Substring(0, 21) == "Could not pass event " && (ignoreCommonTags || line.Tag.Contains("Server thread")))
+                return new CouldNotPassEventEvent(line);
 
             else if (line.Body.Length >= 14 && line.Body.Substring(0, 14) == "Can't keep up!" && (ignoreCommonTags || line.Tag.Contains("Server thread")))
                 return new CantKeepUpEvent(line);
@@ -403,6 +467,9 @@ namespace com.tiberiumfusion.minecraft.logparserlib
             else if (ID_ServerWhitelistRemove.IsMatch(line.Body) && (ignoreCommonTags || line.Tag.Contains("Server thread")))
                 return new ServerWhitelistRemoveEvent(line);
 
+            else if (analysisJavaException(line))
+                return extraAnalysisJavaException(line);
+
             else if (analysisPlayerCommand(line, workingPlayerNames) && (ignoreCommonTags || line.Tag.Contains("Server thread")))
                 return extraAnalysisPlayerCommand(line);
 
@@ -417,14 +484,21 @@ namespace com.tiberiumfusion.minecraft.logparserlib
 
             else
             {
-                if (unmatchedLines != null)
+                if (unmatchedLines != null) // Parallel processing first pass & analysis didn't ID this logline
                 {
                     lock (unmatchedLines)
                     {
                         unmatchedLines.Add(line);
                     }
+                    return null;
                 }
-                return null;
+                else // Parallel processing second pass or serial processing and no ID was made
+                {
+                    if (analyzerOptions.SkipUnrecognizedEvents)
+                        return null;
+                    else
+                        return new UnrecognizedEvent(line);
+                }
             }
         }
 
@@ -478,6 +552,8 @@ namespace com.tiberiumfusion.minecraft.logparserlib
                 return new PlayerNicknameEvent(line);
             else if (spot2 + 5 < check.Length && check.Substring(spot2, 5) == "/ban ")
                 return new PlayerBanEvent(line);
+            else if (spot2 + 6 < check.Length && check.Substring(spot2, 6) == "/kick ")
+                return new PlayerKickEvent(line);
             else
                 return new PlayerCommandEvent(line);
         }
@@ -623,6 +699,45 @@ namespace com.tiberiumfusion.minecraft.logparserlib
                     return true;
             }
             return false;
+        }
+
+        // Java exceptions have an annoying variety of formats
+        private static bool analysisJavaException(LogLine line)
+        {
+            string check = line.Body;
+
+            if (check.Length >= 21 && check.Substring(0, 21) == "Exception in thread \"")
+            {
+                line._AnalysisExtra.Type = 0; // Exception precursor message
+                return true;
+            }
+            else if (   (check.Length >= 5 && check.Substring(0, 5) == "java.")
+                     || (check.Length >= 4 && check.Substring(0, 4) == "org.")
+                     || (check.Length >= 4 && check.Substring(0, 4) == "com."))
+            {
+                int spot = check.IndexOf(": ");
+                if (spot > 4)
+                {
+                    string check2 = check.Substring(0, spot);
+                    if (   check2.Contains("Exception")
+                        && (check.Contains("	at ") || check.Contains("    at ")))
+                    {
+                        line._AnalysisExtra.Type = 1; // Exception stack trace
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+        private static GameEvent extraAnalysisJavaException(LogLine line)
+        {
+            if (line._AnalysisExtra.Type == 0)
+                return new JavaExceptionPrecursorEvent(line);
+            if (line._AnalysisExtra.Type == 1)
+                return new JavaExceptionTraceEvent(line);
+            else
+                return null;
         }
 
         // ChestShop is a plugin with log line formatting that has : chars and player names in it, which will confuse the general chat analysis procedure

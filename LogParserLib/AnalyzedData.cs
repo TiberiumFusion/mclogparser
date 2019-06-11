@@ -15,7 +15,10 @@ namespace com.tiberiumfusion.minecraft.logparserlib
         public Dictionary<string, PlayerStats> AllPlayerStats = new Dictionary<string, PlayerStats>(); // Map of all gathered UUIDs -> that player's stats (which includes all PlayerSessions)
         public List<ServerSession> ServerSessions = new List<ServerSession>(); // Most-top-level structure of the server's primary history. All analyzed data can be accessed from this field.
 
-        public AnalysisStats Stats = new AnalysisStats();
+        public Dictionary<string, int> CompleteGameEventTotals = new Dictionary<string, int>(); // Count of each type of GameEvent
+
+        public AnalysisStats AnalysisProcessStats = new AnalysisStats();
+
 
         public AnalyzedData()
         {

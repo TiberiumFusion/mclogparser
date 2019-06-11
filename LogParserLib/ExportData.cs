@@ -48,7 +48,10 @@ namespace com.tiberiumfusion.minecraft.logparserlib
             public bool ShouldSerializeServerSessionCatalogList() { return (Options.CatalogFormat == ExportCatalogFormat.Lists); }
 
         [JsonProperty(Order = 701)] public Dictionary<string, PlayerStats> AllPlayerStats = new Dictionary<string, PlayerStats>(); // Very similar to counterpart in AnalyzedData        
-        public bool ShouldSerializeIncludeAllPlayerStats() { return Options.IncludeAllPlayerStats; }
+            public bool ShouldSerializeAllPlayerStats() { return Options.IncludeAllPlayerStats; }
+
+        [JsonProperty(Order = 801)] public Dictionary<string, int> CompleteGameEventTotals = new Dictionary<string, int>(); // Count of each type of GameEvent
+            public bool ShouldSerializeCompleteGameEventTotals() { return Options.GameEvent_IncludeCompleteGameEventTotals; }
 
         [JsonProperty(Order = 980)] public AnalysisStats StatsFromAnalysis; // Stats from analysis process (directly from the AnalyzedData object)
 

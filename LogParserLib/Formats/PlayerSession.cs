@@ -81,6 +81,10 @@ namespace com.tiberiumfusion.minecraft.logparserlib.Formats
             public bool ShouldSerializePlayerLoginLocation() { return E_Options.PlayerSession_IncludePlayerLoginLocation; }
 
 
+        [JsonProperty(Order = 701)] public Dictionary<string, int> AllConcurrentGameEventsTotals = new Dictionary<string, int>(); // Count of each type of GameEvent from AllConcurrentGameEvents
+            public bool ShouldSerializeAllConcurrentGameEventsTotals() { return E_Options.PlayerSession_IncludeAllConcurrentGameEventsTotals; }
+
+
         //////////////////////////////////////////// CTOR ////////////////////////////////////////////
         public PlayerSession(string uuid)
         {

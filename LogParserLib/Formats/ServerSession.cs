@@ -107,6 +107,10 @@ namespace com.tiberiumfusion.minecraft.logparserlib.Formats
             public bool ShouldSerializeConcurrentPlayerSessionIDs() { return E_Options.ServerSession_IncludeConcurrentPlayerSessions && E_Options.ServerSession_UseCatalogIDsForConcurrentPlayerSessions; }
 
 
+        [JsonProperty(Order = 801)] public Dictionary<string, int> AllGameEventsTotals = new Dictionary<string, int>(); // Count of each type of GameEvent from AllGameEvents
+        public bool ShouldSerializeAllGameEventsTotals() { return E_Options.ServerSession_IncludeAllGameEventsTotals; }
+        
+
         //////////////////////////////////////////// CTOR ////////////////////////////////////////////
         public ServerSession()
         {

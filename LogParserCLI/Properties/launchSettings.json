@@ -2,7 +2,7 @@
   "profiles": {
     "LogParser": {
       "commandName": "Project",
-      "commandLineArgs": "/path:\"T:\\User Files\\Desktop\\Workspace\\Testing minecraft logparser\" /export:\"export.json\" /exportopt:\"exporterOpts.json\" /analyzeopt:\"analyzerOpts.json\" /compress:0 /waitonfinish"
+      "commandLineArgs": "/path:\"T:\\User Files\\Desktop\\Workspace\\Testing minecraft logparser\\kick\" /export:\"export.json\" /exportopt:\"exporterOpts.json\" /analyzeopt:\"analyzerOpts.json\" /compress:0 /waitonfinish"
     }
   }
 }

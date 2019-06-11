@@ -1,6 +1,7 @@
 ﻿using com.tiberiumfusion.minecraft.logparserlib.Formats;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -32,7 +33,9 @@ namespace com.tiberiumfusion.minecraft.logparserlib
 
         //////////////////////////////////////////// Chat Analysis specific things ////////////////////////////////////////////
 
+        // Enables the general purpose chat heuristic for vanilla chat format
         public bool GeneralChatAnalysisCheckVanilla;
+        // Enables the general purpose chat heuristic for the mineversechat chat format
         public bool GeneralChatAnalysisCheckMineverse;
 
         // Determines how chat messages are analyzed for a positive ID
@@ -45,7 +48,16 @@ namespace com.tiberiumfusion.minecraft.logparserlib
         // If you use this wildcard, you must set a null Regex object as the key's value in the dictionary.
         // If you do not use this wildcard, you must create a Regex object from that string as the key's value in the dictionary.
         public List<ChatAnalysisRegexSet> ChatAnalysisUserRegexes = new List<ChatAnalysisRegexSet>();
-        
+
+        // If true, the Analyzer will throw out all UnrecognizedEvents (as opposed to including them in the analyzed data)
+        public bool SkipUnrecognizedEvents;
+
+        // List of GameEvent types to ignore when analyzing the LogLines
+        public List<Type> ExcludedGameEvents = new List<Type>();
+
+        // Counts up how many of each kind of Game Event there are
+        public bool CountGameEventTotals;
+
 
         // Defaults
         public AnalyzerOptions()
@@ -58,6 +70,12 @@ namespace com.tiberiumfusion.minecraft.logparserlib
             GeneralChatAnalysisCheckMineverse = true;
 
             ChatAnalysisMethod = ChatAnalysisMethodType.GeneralAnalysisOnly;
+
+            SkipUnrecognizedEvents = false;
+
+            ExcludedGameEvents.Clear();
+
+            CountGameEventTotals = true;
         }
         // Creating from json model from user file
         public AnalyzerOptions(AnalyzerOptionsJsonModel jsonModel)
@@ -73,6 +91,18 @@ namespace com.tiberiumfusion.minecraft.logparserlib
 
             foreach (ChatAnalysisRegexSetJsonModel rSetModel in jsonModel.ChatAnalysisUserRegexes)
                 ChatAnalysisUserRegexes.Add(new ChatAnalysisRegexSet(rSetModel));
+
+            SkipUnrecognizedEvents = jsonModel.SkipUnrecognizedEvents;
+
+            foreach (string type in jsonModel.ExcludedGameEvents)
+            {
+                string test = type;
+                if (!test.Contains('.'))
+                    test = "com.tiberiumfusion.minecraft.logparserlib.Formats.GameEvents." + test;
+                ExcludedGameEvents.Add(Type.GetType(test));
+            }
+
+            CountGameEventTotals = jsonModel.CountGameEventTotals;
         }
     }
     
@@ -89,5 +119,11 @@ namespace com.tiberiumfusion.minecraft.logparserlib
         public bool GeneralChatAnalysisCheckMineverse;
 
         public List<ChatAnalysisRegexSetJsonModel> ChatAnalysisUserRegexes;
+
+        public bool SkipUnrecognizedEvents;
+
+        public List<string> ExcludedGameEvents;
+
+        public bool CountGameEventTotals;
     }
 }

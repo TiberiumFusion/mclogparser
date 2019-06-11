@@ -15,14 +15,17 @@ namespace com.tiberiumfusion.minecraft.logparserlib
             bool doLogging = (executor != null);
 
             // Link analysis stats
-            outputData.StatsFromAnalysis = inputData.Stats;
+            outputData.StatsFromAnalysis = inputData.AnalysisProcessStats;
 
             // Stringify catalog format enum for human-reading
             outputData.CatalogFormat = Enum.GetName(typeof(ExportCatalogFormat), outputData.Options.CatalogFormat);
 
-            //////////////////////////////////////////// Build logline catalog ////////////////////////////////////////////
+            //////////////////////////////////////////// Link GameEvent totals ////////////////////////////////////////////
+            outputData.CompleteGameEventTotals = inputData.CompleteGameEventTotals;
+
+            //////////////////////////////////////////// Build DecoratedLog/LogLine catalog ////////////////////////////////////////////
             if (doLogging)
-                reportProgress(executor, new WorkerReport("Building LogLine catalog ... ", false, true, 0));
+                reportProgress(executor, new WorkerReport("Building DecoratedLog/LogLine catalog ... ", false, true, 0));
             outputData.GrandLogLineTotal = inputData.GrandLogLineTotal;
             float total = (float)outputData.GrandLogLineTotal;
             int current = 0;
@@ -51,7 +54,7 @@ namespace com.tiberiumfusion.minecraft.logparserlib
                         if ((DateTime.Now - lastReport).TotalMilliseconds > 100)
                         {
                             string logProgress = (((float)(i + 1) / total) * 100.0f).ToString("N2") + "%";
-                            reportProgress(executor, new WorkerReport("Building LogLine catalog ... " + logProgress + "      ", false, true, 0));
+                            reportProgress(executor, new WorkerReport("Building DecoratedLog/LogLine catalog ... " + logProgress + "      ", false, true, 0));
                             lastReport = DateTime.Now;
                         }
                     }
@@ -68,7 +71,7 @@ namespace com.tiberiumfusion.minecraft.logparserlib
                 dlog.E_Options = outputData.Options;
             }
             if (doLogging)
-                reportProgress(executor, new WorkerReport("Building LogLine catalog ... done      ", true, true, 0));
+                reportProgress(executor, new WorkerReport("Building DecoratedLog/LogLine catalog ... done      ", true, true, 0));
 
             //////////////////////////////////////////// Build GameEvent catalog ////////////////////////////////////////////
             if (doLogging)
@@ -118,19 +121,52 @@ namespace com.tiberiumfusion.minecraft.logparserlib
             if (doLogging)
                 reportProgress(executor, new WorkerReport("Building GameEvent catalog ... done      ", true, true, 0));
 
+            //////////////////////////////////////////// Finalize DecoratedLog/LogLine catalog ////////////////////////////////////////////
+            // Now that the GE catalog is done, we can generate IDs each Dlog's local list of GameEvents
+            if (doLogging)
+                reportProgress(executor, new WorkerReport("Finalizing DecoratedLog/LogLine catalog ... ", false, true, 0));
+            total = 0f;
+            foreach (DecoratedLog dlog in inputData.DecoratedLogs)
+                total += (float)dlog.GameEvents.Count;
+            lastReport = DateTime.Now;
+            foreach (DecoratedLog dlog in inputData.DecoratedLogs)
+            {
+                dlog.GameEventIDs.Clear();
+
+                for (int i = 0; i < dlog.GameEvents.Count; i++)
+                {
+                    if (doLogging)
+                    {
+                        if ((DateTime.Now - lastReport).TotalMilliseconds > 100)
+                        {
+                            string logProgress = (((float)(i + 1) / total) * 100.0f).ToString("N2") + "%";
+                            reportProgress(executor, new WorkerReport("Finalizing DecoratedLog/LogLine catalog ... " + logProgress + "      ", false, true, 0));
+                            lastReport = DateTime.Now;
+                        }
+                    }
+
+                    GameEvent ge = dlog.GameEvents[i];
+
+                    dlog.GameEventIDs.Add(outputData.GameEventLookup[ge]);
+                }
+            }
+            if (doLogging)
+                reportProgress(executor, new WorkerReport("Building DecoratedLog/LogLine catalog ... done      ", true, true, 0));
+
+
+
             //////////////////////////////////////////// Build PlayerSession catalog ////////////////////////////////////////////
             if (doLogging)
                 reportProgress(executor, new WorkerReport("Building PlayerSession catalog ... ", false, true, 0));
             total = 0f;
-            foreach (string uuidKey in inputData.AllPlayerStats.Keys)
-                total += (float)inputData.AllPlayerStats[uuidKey].Sessions.Count;
+            foreach (PlayerStats stats in inputData.AllPlayerStats.Values)
+                total += (float)stats.Sessions.Count;
             current = 0;
             outputData.PlayerSessionLookup.Clear();
             workingID = 0;
             lastReport = DateTime.Now;
-            foreach (string uuidKey in inputData.AllPlayerStats.Keys)
+            foreach (PlayerStats stats in inputData.AllPlayerStats.Values)
             {
-                PlayerStats stats = inputData.AllPlayerStats[uuidKey];
                 for (int i = 0; i < stats.Sessions.Count; i++)
                 {
                     if (doLogging)
@@ -271,13 +307,12 @@ namespace com.tiberiumfusion.minecraft.logparserlib
             if (doLogging)
                 reportProgress(executor, new WorkerReport("Finalizing PlayerSession catalog ... ", false, true, 0));
             total = 0f;
-            foreach (string uuidKey in inputData.AllPlayerStats.Keys)
-                total += (float)inputData.AllPlayerStats[uuidKey].Sessions.Count;
+            foreach (PlayerStats stats in inputData.AllPlayerStats.Values)
+                total += (float)stats.Sessions.Count;
             current = 0;
             lastReport = DateTime.Now;
-            foreach (string uuidKey in inputData.AllPlayerStats.Keys)
+            foreach (PlayerStats stats in inputData.AllPlayerStats.Values)
             {
-                PlayerStats stats = inputData.AllPlayerStats[uuidKey];
                 for (int i = 0; i < stats.Sessions.Count; i++)
                 {
                     if (doLogging)
@@ -315,7 +350,7 @@ namespace com.tiberiumfusion.minecraft.logparserlib
             workingID = 0;
             current = 0;
             lastReport = DateTime.Now;
-            foreach (string uuidKey in inputData.AllPlayerStats.Keys)
+            foreach (PlayerStats stats in inputData.AllPlayerStats.Values)
             {
                 if (doLogging)
                 {
@@ -326,8 +361,7 @@ namespace com.tiberiumfusion.minecraft.logparserlib
                         lastReport = DateTime.Now;
                     }
                 }
-
-                PlayerStats stats = inputData.AllPlayerStats[uuidKey];
+                
                 stats.E_ID = workingID;
 
                 workingID++;

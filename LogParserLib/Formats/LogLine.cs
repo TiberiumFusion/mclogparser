@@ -23,7 +23,6 @@ namespace com.tiberiumfusion.minecraft.logparserlib.Formats
         public DateTime Time;
         public LogTagLevel TagLevel;
         [JsonIgnore] public dynamic _AnalysisExtra = new ExpandoObject(); // To avoid some repeated calculations during analysis
-        public bool IsLikelyException = false; // True if this log line is likely a java VM exception trace
 
         public LogLine(string tag, string body, DateTime time, LogLineList parent)
         {
@@ -39,16 +38,6 @@ namespace com.tiberiumfusion.minecraft.logparserlib.Formats
                 TagLevel = LogTagLevel.WARN;
             else if (Tag.Contains("/ERROR"))
                 TagLevel = LogTagLevel.ERROR;
-
-            if (body.Length >= 5 && body.Substring(0, 5) == "java.")
-            {
-                int spot = body.IndexOf(": ");
-                if (spot > 5)
-                {
-                    if (body.Substring(0, spot).Contains("Exception"))
-                        IsLikelyException = true;
-                }
-            }
         }
 
         // Returns this log line in the format used by the minecraft log files

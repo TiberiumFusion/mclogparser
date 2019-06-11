@@ -26,8 +26,8 @@ namespace com.tiberiumfusion.minecraft.logparserlib
                 string path = filePaths[i];
                 if (File.Exists(path))
                 {
-                    //try
-                    //{
+                    try
+                    {
                         if (doLogging)
                             reportProgress(executor, new WorkerReport("Reading path \"" + path + "\" ... ", false));
                         DecoratedLog dlog = new DecoratedLog(path);
@@ -35,11 +35,11 @@ namespace com.tiberiumfusion.minecraft.logparserlib
                         workingOuput.DecoratedLogs.Add(dlog);
                         if (doLogging)
                             reportProgress(executor, new WorkerReport("success", true, false));
-                    //}
-                    //catch (Exception e)
-                    //{
-                    //    reportProgress(executor, new WorkerReport("failed: path could not be read/parsed"));
-                    //}
+                    }
+                    catch (Exception e)
+                    {
+                        reportProgress(executor, new WorkerReport("failed: path could not be read/parsed"));
+                    }
                 }
                 else
                 {

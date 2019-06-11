@@ -38,6 +38,14 @@ namespace com.tiberiumfusion.minecraft.logparserlib.Formats
         [JsonProperty(Order = 101)] public TimeRange TimeRange; // Filled in by the Analyzer
             public bool ShouldSerializeTimeRange() { return E_Options.DecoratedLog_IncludeTimeRange; }
 
+        [JsonProperty(Order = 301)] public List<GameEvent> GameEvents = new List<GameEvent>(); // All game events in this log's timespan
+            public bool ShouldSerializeGameEvents() { return E_Options.DecoratedLog_IncludeGameEvents && !E_Options.DecoratedLog_UseCatalogIDsForGameEvents; }
+        [JsonProperty(Order = 302)] public List<long> GameEventIDs = new List<long>(); // Export-friendly version of the above field
+            public bool ShouldSerializeGameEventIDs() { return E_Options.DecoratedLog_IncludeGameEvents && E_Options.DecoratedLog_UseCatalogIDsForGameEvents; }
+
+        [JsonProperty(Order = 401)] public Dictionary<string, int> GameEventTotals = new Dictionary<string, int>(); // Count of each type of GameEvent
+            public bool ShouldSerializeGameEventTotals() { return E_Options.DecoratedLog_IncludeGameEventTotals; }
+
 
         //////////////////////////////////////////// CTOR ////////////////////////////////////////////
         public DecoratedLog(string path)

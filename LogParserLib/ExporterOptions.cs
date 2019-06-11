@@ -46,14 +46,22 @@ namespace com.tiberiumfusion.minecraft.logparserlib
 
         public bool DecoratedLog_IncludeTimeRange; // Includes the TimeRange field
 
+        public bool DecoratedLog_IncludeGameEvents; // Includes the GameEvents field
+        public bool DecoratedLog_UseCatalogIDsForGameEvents; // Use a catalog ID for the above object, instead of inlining it
+
+        public bool DecoratedLog_IncludeGameEventTotals; // Includes the GameEventTotals field
+
 
         //================| GameEvent fields |================//
 
         public bool IncludeGameEventCatalog; // Includes the catalog of GameEvents
 
-        public bool GameEvent_IncludeSourceLogLine; // Includes the LogLine object that the GameEvent was built from
+        public bool GameEvent_IncludeTime; // Includes the Time field
 
+        public bool GameEvent_IncludeSourceLogLine; // Includes the LogLine object that the GameEvent was built from
         public bool GameEvent_UseCatalogIDsForSourceLogLine; // Use a catalog ID for the above object, instead of inlining it
+
+        public bool GameEvent_IncludeCompleteGameEventTotals; // Includes a total of every type of GameEvent in the GameEvent catalog
 
 
         //================| Subclassed & misc GameEvent fields |================//
@@ -131,6 +139,8 @@ namespace com.tiberiumfusion.minecraft.logparserlib
 
         public bool PlayerSession_IncludePlayerLoginLocation; // Includes the PlayerLoginLocation field
 
+        public bool PlayerSession_IncludeAllConcurrentGameEventsTotals; // Includes the AllConcurrentGameEventsTotals field
+
 
         //================| ServerSession fields |================//
 
@@ -192,13 +202,14 @@ namespace com.tiberiumfusion.minecraft.logparserlib
         public bool ServerSession_IncludeConcurrentPlayerSessions; // Includes the ConcurrentPlayerSessions field
         public bool ServerSession_UseCatalogIDsForConcurrentPlayerSessions; // Use catalog IDs for the above object, instead of inlining it
 
+        public bool ServerSession_IncludeAllGameEventsTotals; // Includes the AllGameEventsTotals field
+
 
         //================| GameEvent fields |================//
 
         public bool IncludeAllPlayerStats; // Includes the IncludeAllPlayerStats collection
 
         public bool PlayerStats_IncludeSessions; // Includes the Sessions field
-
         public bool PlayerStats_UseCatalogIDsForSessions; // Use catalog IDs for the above object, instead of inlining it
 
         public bool PlayerStats_IncludeTotalGametime; // Includes the TotalGametime field
@@ -230,10 +241,15 @@ namespace com.tiberiumfusion.minecraft.logparserlib
             DecoratedLog_IncludeDissectedLogLines = true;
             DecoratedLog_IncludeRawLogLines = false;
             DecoratedLog_IncludeTimeRange = true;
+            DecoratedLog_IncludeGameEvents = true;
+            DecoratedLog_UseCatalogIDsForGameEvents = true;
+            DecoratedLog_IncludeGameEventTotals = false;
 
             IncludeGameEventCatalog = true;
+            GameEvent_IncludeTime = true;
             GameEvent_IncludeSourceLogLine = true;
             GameEvent_UseCatalogIDsForSourceLogLine = true;
+            GameEvent_IncludeCompleteGameEventTotals = true;
 
             FormattedChatString_UseHTMLFormatting = true;
             FormattedChatString_HTMLTag = "span";
@@ -274,6 +290,7 @@ namespace com.tiberiumfusion.minecraft.logparserlib
             PlayerSession_IncludePlayerIP = true;
             PlayerSession_IncludePlayerPort = true;
             PlayerSession_IncludePlayerLoginLocation = true;
+            PlayerSession_IncludeAllConcurrentGameEventsTotals = false;
 
             IncludeServerSessionCatalog = true;
             ServerSession_IncludeRange = true;
@@ -309,6 +326,7 @@ namespace com.tiberiumfusion.minecraft.logparserlib
 	        ServerSession_IncludeServerLoadedLevels = true;
 	        ServerSession_IncludeConcurrentPlayerSessions = true;
 	        ServerSession_UseCatalogIDsForConcurrentPlayerSessions = true;
+            ServerSession_IncludeAllGameEventsTotals = false;
 
             IncludeAllPlayerStats = true;
             PlayerStats_IncludeSessions = true;
@@ -336,6 +354,10 @@ namespace com.tiberiumfusion.minecraft.logparserlib
             // Dissected loglines requires the Dlog catalog
             if (opts.DecoratedLog_IncludeDissectedLogLines && !opts.IncludeDecoratedLogCatalog)
                 throw new Exception(parsingExceptionPrefix + "DecoratedLog_IncludeDissectedLogLines = true requires: IncludeDecoratedLogCatalog = true");
+
+            // Dlog game event IDs require the GE catalog
+            if (opts.DecoratedLog_UseCatalogIDsForGameEvents && !opts.IncludeGameEventCatalog)
+                throw new Exception(parsingExceptionPrefix + "DecoratedLog_UseCatalogIDsForGameEvents = true requires: IncludeGameEventCatalog = true");
 
             // GE source log IDs require the loglines logs catalog
             if (opts.GameEvent_UseCatalogIDsForSourceLogLine && !opts.DecoratedLog_IncludeDissectedLogLines)
