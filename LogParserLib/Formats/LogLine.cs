@@ -14,14 +14,14 @@ namespace com.tiberiumfusion.minecraft.logparserlib.Formats
     // A single line of a log
     public class LogLine
     {
-        public long E_ID { get; set; } // E_ for "filled in by the Exporter". Index that this object occupies in the Json export catalog.
+        [JsonProperty(Order = -990)] public long E_ID { get; set; } // E_ for "filled in by the Exporter". Index that this object occupies in the Json export catalog.
 
         [JsonIgnore] public LogLineList ParentLogLineList;
 
-        public string Tag;
-        public string Body;
-        public DateTime Time;
-        public LogTagLevel TagLevel;
+        [JsonProperty(Order = 102)] public string Tag;
+        [JsonProperty(Order = 104)] public string Body;
+        [JsonProperty(Order = 101)] public DateTime Time;
+        [JsonProperty(Order = 103)] public LogTagLevel TagLevel;
         [JsonIgnore] public dynamic _AnalysisExtra = new ExpandoObject(); // To avoid some repeated calculations during analysis
 
         public LogLine(string tag, string body, DateTime time, LogLineList parent)
